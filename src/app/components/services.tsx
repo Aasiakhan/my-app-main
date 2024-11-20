@@ -6,17 +6,22 @@ import ServiceForm from "./add-services";
 interface Service {
   id: number;
   name: string;
-  status: "online" | "offline";
+  status: Status;
   ip: string;
   timestamp: string;
   port: string;
+}
+
+enum Status {
+  UP="UP",
+  DOWN="DOWN",
 }
 
 const Data: Service[] = [
   {
     id: 1,
     name: "Service 1",
-    status: "online",
+    status: Status.UP,
     ip: "192.168.1.1",
     timestamp: "2024-10-14 10:00:00",
     port: "3001",
@@ -24,7 +29,7 @@ const Data: Service[] = [
   {
     id: 2,
     name: "Service 2",
-    status: "offline",
+    status: Status.DOWN,
     ip: "192.168.1.2",
     timestamp: "2024-10-14 09:30:00",
     port: "3002",
@@ -32,7 +37,7 @@ const Data: Service[] = [
   {
     id: 3,
     name: "Service 3",
-    status: "online",
+    status: Status.UP,
     ip: "192.168.1.3",
     timestamp: "2024-10-14 08:45:00",
     port: "3002",
@@ -43,15 +48,15 @@ const ServicesTable: React.FC = () => {
   const [services, setServices] = useState<Service[]>(Data);
   const [loading, setLoading] = useState<boolean>(true);
   const [showForm, setShowForm] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const [_, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchServices = async () => {
       try {
-        const response = await axios.get<Service[]>(
-          "http://localhost:8080/services-status"
+        const response = await axios.get<{last_updated_at:string,data:Service[]}>(
+          "http://192.168.25.146:8000/services-status"
         );
-        setServices(response.data);
+        setServices(response.data.data);
         setLoading(false);
       } catch (err) {
         setError("Failed to fetch services");
@@ -71,7 +76,7 @@ const ServicesTable: React.FC = () => {
     const service: Service = {
       id,
       name: newService.name,
-      status: "offline", 
+      status: Status.DOWN,
       ip: newService.ip,
       timestamp,
       port: newService.port,
@@ -95,22 +100,22 @@ const ServicesTable: React.FC = () => {
           {showForm ? "Close Form" : "Add New"}
         </button>
         {showForm && <ServiceForm onAddService={handleAddService} />}
-        <table className="min-w-full bg-white border border-gray-200 rounded-lg shadow-md">
+        <table className="min-w-full bg-white border border-gray-200 rounded-lg shadow-md text-left">
           <thead>
             <tr>
-              <th className="py-3 px-5 bg-gray-50 border-b font-semibold text-gray-600 text-center">
+              <th className="py-3 px-5 bg-gray-50 border-b font-semibold text-gray-600">
                 Name
               </th>
-              <th className="py-3 px-5 bg-gray-50 border-b font-semibold text-gray-600 text-center">
+              <th className="py-3 px-5 bg-gray-50 border-b font-semibold text-gray-600">
                 IP
               </th>
-              <th className="py-3 px-5 bg-gray-50 border-b font-semibold text-gray-600 text-center">
+              <th className="py-3 px-5 bg-gray-50 border-b font-semibold text-gray-600">
                 Port
               </th>
-              <th className="py-3 px-5 bg-gray-50 border-b font-semibold text-gray-600 text-center">
+              <th className="py-3 px-5 bg-gray-50 border-b font-semibold text-gray-600">
                 Status
               </th>
-              <th className="py-3 px-5 bg-gray-50 border-b font-semibold text-gray-600 text-center">
+              <th className="py-3 px-5 bg-gray-50 border-b font-semibold text-gray-600">
                 Updated at
               </th>
             </tr>
@@ -118,20 +123,20 @@ const ServicesTable: React.FC = () => {
           <tbody>
             {services.map((service) => (
               <tr key={service.id} className="hover:bg-gray-100">
-                <td className="py-3 px-5 border-b text-gray-700 text-center">
+                <td className="py-3 px-5 border-b text-gray-700">
                   {service.name}
                 </td>
-                <td className="py-3 px-5 border-b text-gray-700 text-center">
+                <td className="py-3 px-5 border-b text-gray-700">
                   {service.ip}
                 </td>
-                <td className="py-3 px-5 border-b text-gray-700 text-center">
+                <td className="py-3 px-5 border-b text-gray-700">
                   {service.port}
                 </td>
-                <td className="py-3 px-5 border-b text-center">
-                  <div className="flex items-center justify-center space-x-2">
+                <td className="py-3 px-5 border-b">
+                  <div className="flex items-center justify-start space-x-2 text-black">
                     <span
                       className={`inline-block h-3 w-3 rounded-full ${
-                        service.status === "online"
+                        service.status === Status.UP
                           ? "bg-green-500"
                           : "bg-red-500"
                       }`}
@@ -141,7 +146,7 @@ const ServicesTable: React.FC = () => {
                     </span>
                   </div>
                 </td>
-                <td className="py-3 px-5 border-b text-gray-700 text-center">
+                <td className="py-3 px-5 border-b text-gray-700">
                   {service.timestamp}
                 </td>
               </tr>
